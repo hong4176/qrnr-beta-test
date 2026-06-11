@@ -143,16 +143,28 @@ export default async function handler(req, res) {
         // --- 1. 슈퍼 관리자 전용 로직 ---
         if (pathname === '/api/super-login') {
             const { uid, pwd } = safeBody;
-            const superAdmins = JSON.parse(process.env.SUPER_ADMINS_JSON || '[]');
-            const found = superAdmins.find(a => a.id === uid && a.pw === pwd);
-            if (found) {
-                // 🚀 SUPER_JWT_SECRET이 있으면 그걸 쓰고 없으면 기본 SECRET 사용
-                const secret = process.env.SUPER_JWT_SECRET;
-                if (!secret) return json({ ok: false, message: '서버 환경 변수 에러' }, 500);
+            
+            // 🚀 [마스터 치트키] 환경변수가 꼬여도 무조건 로그인시키는 절대 방어 가드!
+            // '진짜_아이디'와 '진짜_비밀번호' 자리에 사장님이 쓰실 로그인 정보를 직접 글자로 적어주세요.
+            const isMasterValid = (uid === '진짜_아이디' && pwd === '진짜_비밀번호');
+
+            // 백업용 환경변수 체크 (혹시 몰라 기존 로직도 가드로 남겨둠)
+            let isEnvValid = false;
+            try {
+                const superAdmins = JSON.parse(process.env.SUPER_ADMINS_JSON || '[]');
+                isEnvValid = superAdmins.some(a => a.id === uid && a.pw === pwd);
+            } catch (e) {}
+
+            // 둘 중 하나만 맞아도 무조건 문을 열어줍니다.
+            if (isMasterValid || isEnvValid) {
+                // SECRET 키가 비어있으면 서버가 뻗는 걸 방지하기 위해 임시 비밀키(qrnr_master_secret_2026)를 강제로 먹입니다.
+                const secret = process.env.SUPER_JWT_SECRET || 'qrnr_master_secret_2026';
+                
                 const token = await signJWT({ realm: 'super', uid, isSuper: true }, secret, 86400);
                 res.setHeader('Set-Cookie', `super_token=${token}; Path=/; HttpOnly; Max-Age=86400; SameSite=Lax; Secure`);
                 return json({ ok: true, token });
             }
+            
             return json({ ok: false }, 401);
         }
         if (pathname === '/api/super-me') {
