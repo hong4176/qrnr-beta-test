@@ -146,7 +146,7 @@ export default async function handler(req, res) {
             
             // 🚀 [마스터 치트키] 환경변수가 꼬여도 무조건 로그인시키는 절대 방어 가드!
             // '진짜_아이디'와 '진짜_비밀번호' 자리에 사장님이 쓰실 로그인 정보를 직접 글자로 적어주세요.
-            const isMasterValid = (uid === '진짜_아이디' && pwd === '진짜_비밀번호');
+            const isMasterValid = (uid === 'super' && pwd === '!1234');
 
             // 백업용 환경변수 체크 (혹시 몰라 기존 로직도 가드로 남겨둠)
             let isEnvValid = false;
