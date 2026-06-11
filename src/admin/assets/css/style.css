@@ -1,0 +1,172 @@
+/* [1] 기본 변수 및 초기화 */
+:root {
+  --bg: #0f141a;
+  --panel: #111922;
+  --text: #e6edf3;
+  --muted: #9fb0c0;
+  --primary: #2ea043;
+  --border: #263241;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* [2] 공용 레이아웃 요소 */
+.container { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
+.card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 22px; margin-bottom: 20px; }
+.hstack { display: flex; gap: 10px; align-items: center; }
+.vstack { display: flex; flex-direction: column; gap: 12px; }
+
+/* 탭바 */
+.tabbar { display: flex; gap: 10px; flex-wrap: wrap; margin: 14px 0; }
+.tab { padding: 10px 14px; border: 1px solid var(--border); border-radius: 12px; background: #0b1620; cursor: pointer; color: var(--text); }
+.tab.active { outline: 2px solid #2ea04355; border-color: var(--primary); }
+
+/* 테이블 공통 */
+.table { width: 100%; border-collapse: collapse; }
+.table th, .table td { border-bottom: 1px solid var(--border); padding: 10px; text-align: left; }
+.table th { white-space: nowrap; color: var(--muted); font-size: 13px; }
+
+/* 입력창 및 버튼 */
+.input { background: #0b1620; border: 1px solid var(--border); border-radius: 10px; color: var(--text); padding: 10px 12px; outline: none; width: 100%; }
+.btn { background: #0b1620; border: 1px solid var(--border); border-radius: 10px; color: var(--text); padding: 10px 14px; cursor: pointer; transition: 0.2s; }
+.btn.primary { background: var(--primary); border-color: transparent; color: white; }
+.btn:active { transform: scale(0.98); opacity: 0.8; }
+
+/* 유틸리티 */
+.small { font-size: 12px; color: var(--muted); }
+.badge { border: 1px solid var(--border); padding: 2px 8px; border-radius: 999px; color: var(--muted); font-size: 12px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+.right { margin-left: auto; }
+
+/* 상태 표시 점 */
+.badge-dot { display: inline-block; width: 8px; height: 8px; border-radius: 999px; margin-right: 6px; }
+.badge-wait { background: #ffda6a; }
+.badge-cook { background: #74c0fc; }
+.badge-done { background: #63e6be; }
+
+/* 🚀 [수정] 결제 라인: 상태창 아래 위치 & 줄바꿈 설정 */
+.order-action-line {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;       /* 칸 부족하면 버튼이 통째로 아래로 */
+  margin-top: 6px;
+  align-items: center;
+}
+
+/* 🚀 [수정] 뱃지형 버튼 공통: 내부 글자 줄바꿈 방지 */
+.btn-sm-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 22px !important;
+  padding: 0 8px !important;
+  font-size: 10px !important;
+  font-weight: 600;
+  border-radius: 6px;
+  white-space: nowrap !important; /* 글자 줄바꿈 절대 방지 */
+  border: none !important;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+/* 🚀 [추가] 버튼별 색상 (완료=초록, 취소=빨강 꽉 찬 배경) */
+.badge-paid-sm { background: var(--primary) !important; color: #fff !important; cursor: default !important; }
+/* 🚀 결제취소: 배경은 화면색(투명), 테두리는 빨간색, 글씨는 하얀색 */
+.btn-cancel-sm {
+    background: transparent !important;   /* 배경은 사장님 화면색 그대로 */
+    border: 1px solid #ef4444 !important; /* 테두리는 빨간색 */
+    color: #ffffff !important;            /* 🚀 글씨는 하얀색 */
+    cursor: pointer;
+}
+
+/* 마우스 올렸을 때 살짝 빨간 느낌만 추가 */
+.btn-cancel-sm:hover {
+    background: rgba(239, 68, 68, 0.1) !important;
+    border-color: #ff7b72 !important;
+}
+.btn-pos-confirm {
+    background: transparent !important;   /* 배경 투명 */
+    border: 1px solid var(--primary) !important; /* 테두리 초록색 */
+    color: #ffffff !important;            /* 🚀 글씨 하얀색 */
+    cursor: pointer;
+}
+.btn-pos-confirm:hover {
+    background: rgba(46, 160, 67, 0.1) !important; /* 마우스 올리면 살짝 초록빛 */
+}
+.badge-cancelled-final {
+    background: #30363d !important; /* 어두운 회색 배경 */
+    color: #8b949e !important;      /* 흐릿한 글자색 */
+    border: none !important;        /* 테두리 없음 */
+    cursor: default !important;     /* 커서 포인터 제거 */
+}
+
+/* [3] 필드 및 입력 폼 상세 */
+.field-row { display: flex; align-items: center; gap: 8px; }
+.field-label { width: 60px; font-size: 13px; flex-shrink: 0; color: var(--muted); }
+.date-time-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; width: 100%; }
+.input-sm { width: 90px; padding: 8px 10px; }
+
+/* 날짜 입력 아이콘 반전 */
+input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
+
+/* [4] 토스트 알림 */
+.toast {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  background: #111922; border: 1px solid var(--border); color: var(--text);
+  padding: 12px 20px; border-radius: 12px; font-size: 14px;
+  z-index: 99999; opacity: 0; transition: 0.3s ease;
+}
+.toast.show { opacity: 1; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+.toast-success { border-left: 5px solid var(--primary); }
+.toast-error { border-left: 5px solid #ef4444; }
+.toast-info { border-left: 5px solid #74c0fc; }
+
+/* [5] 모달창 공통 */
+.modal {
+  display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.7); justify-content: center; align-items: center; z-index: 9999;
+}
+.modal > .content {
+  background: var(--panel); padding: 24px; border-radius: 18px;
+  width: 92%; max-width: 420px; border: 1px solid var(--border);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+}
+.modal textarea { width: 100%; height: 100px; background: #0b1620; color: var(--text); border: 1px solid var(--border); border-radius: 12px; padding: 12px; resize: none; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+
+/* [5-1] 매장주문 데스크탑 배치 (PC 화면용) */
+@media (min-width: 769px) {
+  .order-status-box { display: flex; flex-direction: row; align-items: center; gap: 12px; }
+  .order-status-line { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .order-status-line select { width: 130px; }
+  .order-action-line { margin-top: 0; }
+}
+
+/* [6] 📱 모바일 통합 최적화 */
+@media (max-width: 768px) {
+  .desktop-only { display: none !important; }
+  .table thead { display: none; }
+  .table, .table tbody, .table tr, .table td { display: block; width: 100%; }
+  .table tbody tr { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+  .table tbody td { display: flex; align-items: flex-start; gap: 10px; border: none; padding: 6px 0; font-size: 14px; }
+  .table tbody td::before { content: attr(data-label); width: 95px; font-size: 12px; color: var(--muted); flex-shrink: 0; white-space: nowrap; text-align: left; }
+  .order-action-line { margin-top: 8px; width: 100%; }
+}
+
+/* [7] 기타 유틸리티 */
+.btn-loading { position: relative; color: transparent !important; pointer-events: none; }
+.btn-loading::after {
+  content: ""; position: absolute; width: 16px; height: 16px; top: 50%; left: 50%;
+  margin-top: -8px; margin-left: -8px; border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 50%; border-top-color: #fff; animation: spin 0.8s linear infinite;
+}
+@keyframes spin { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+
+.btn-del-custom { background: transparent; border: 1px solid var(--primary); color: var(--primary); padding: 6px 20px; border-radius: 6px; cursor: pointer; font-size: 13px; height: 34px; }
+.btn-add-custom { background: transparent; border: 1px solid var(--primary); color: var(--primary); border-radius: 20px; cursor: pointer; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; font-weight: 500; }

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <link rel="stylesheet" href="/src/admin/assets/css/style.css"/>
+  <title>마이페이지</title>
+</head>
+<body data-store-id="">
+<div class="container">
+  <div class="hstack" style="justify-content:space-between">
+    <h1>마이페이지</h1>
+    <a id="btn-back" class="btn" href="#">← 주문으로 돌아가기</a>
+  </div>
+
+  <div class="card vstack">
+    <h3>내 주문 내역</h3>
+    <div id="list"></div>
+  </div>
+</div>
+
+<script type="module">
+import { get } from '/src/order/assets/js/modules/cust-store.js';
+import { ensureStoreInitialized } from '/src/shared/store.js';
+
+// ⭐ 1) storeId 초기화
+const storeId = ensureStoreInitialized();
+window.qrnrStoreId = storeId;
+document.body.setAttribute("data-store-id", storeId);
+
+// ⭐ 2) URL storeId 자동 보정
+const url = new URL(location.href);
+if (!url.searchParams.get("store")) {
+  url.searchParams.set("store", storeId);
+  location.replace(url.toString());
+}
+
+// ⭐ 3) "돌아가기" 버튼 — 회원/비회원 자동 감지
+const btnBack = document.getElementById('btn-back');
+
+// 비회원 접근 여부 감지: cust-store.js 에 customer 정보 없음
+const isGuest = !get(['customer','phone']);
+
+if (btnBack) {
+  btnBack.href = isGuest
+    ? `/src/order/delivery-guest.html?store=${storeId}`
+    : `/src/order/delivery.html?store=${storeId}`;
+}
+
+// ⭐ 4) 주문 내역 불러오기 (기존 로직 유지)
+const list = document.getElementById('list');
+const orders = get(['admin','ordersDelivery']) || [];
+
+if (!orders.length) {
+  list.innerHTML = '<div class="small">주문 내역이 없습니다.</div>';
+}
+
+orders.slice().reverse().forEach(o => {
+  const div = document.createElement('div');
+  div.className = 'vstack';
+  div.style.border = '1px solid #263241';
+  div.style.borderRadius = '12px';
+  div.style.padding = '10px';
+  div.style.margin = '6px 0';
+
+  const items = (o.items || []).map(i => i.name + 'x' + i.qty).join(', ');
+
+  const typeLabel = (o.type === 'RESV' || o.type === 'reserve') ? '예약' : '배달';
+
+  const timeStr = o.time
+    ? new Date(o.time).toLocaleString()
+    : (o.dateTime || '');
+
+  div.innerHTML = `
+    <div class="hstack" style="justify-content:space-between">
+      <b>${typeLabel}</b>
+      <span class="small">${timeStr}</span>
+    </div>
+    <div class="small">${o.addr || ''}</div>
+    <div class="small">예약: ${o.reserve || '-'}</div>
+    <div>${items}</div>
+    <div><b>${(o.total || 0).toLocaleString()}원</b> · 상태: ${o.status || '-'}</div>
+  `;
+  list.appendChild(div);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+// api/admin/list-admins.js
+// 슈퍼 관리자 전용: 관리자 목록 조회 API
+
+import { Pool } from '@neondatabase/serverless';
+import { verifyJWT } from '../../src/shared/jwt.js'; 
+
+export const config = { runtime: 'edge' };
+
+export default async function handler(req) {
+    if (req.method !== 'GET') {
+        return new Response(JSON.stringify({ ok: false, error: 'METHOD_NOT_ALLOWED' }), { status: 405 });
+    }
+
+    // 슈퍼 관리자 권한 확인
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ ok: false, error: 'UNAUTHORIZED' }), { status: 401 });
+    }
+
+    const token = authHeader.substring(7);
+    // 환경 변수가 없을 경우 에러를 던져서 실행을 중단시킵니다.
+    if (!process.env.SUPER_JWT_SECRET) {
+      return new Response(
+            JSON.stringify({ ok: false, error: 'SERVER_CONFIG_ERROR', message: '서버 환경 변수(SUPER_JWT_SECRET)가 설정되지 않았습니다.' }), 
+            { status: 500, headers: { 'Content-Type': 'application/json' } }
+        );
+    }
+    
+    const payload = await verifyJWT(token, process.env.SUPER_JWT_SECRET);
+
+    if (!payload || payload.realm !== 'super') {
+        return new Response(JSON.stringify({ ok: false, error: 'FORBIDDEN' }), { status: 403 });
+    }
+
+    const url = new URL(req.url);
+    const page = parseInt(url.searchParams.get('page') || '1', 10);
+    const limit = parseInt(url.searchParams.get('limit') || '10', 10);
+    const search = url.searchParams.get('search') || '';
+
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL || "postgres://dummy:dummy@dummy:5432/dummy" });
+    
+    try {
+        const offset = (page - 1) * limit;
+        let whereClause = '';
+        const params = [];
+
+        if (search) {
+            whereClause = `WHERE id ILIKE $1 OR name ILIKE $1`;
+            params.push(`%${search}%`);
+        }
+
+        // 1) Total Count
+        const countSql = `SELECT COUNT(*) FROM admins ${whereClause}`;
+        const countRes = await pool.query(countSql, params);
+        const total = parseInt(countRes.rows[0].count, 10);
+
+        // 2) Data
+        const dataSql = `
+      SELECT id, name, email, phone, role, is_active, created_at 
+      FROM admins 
+      ${whereClause} 
+      ORDER BY created_at DESC 
+      LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+    `;
+        const dataParams = [...params, limit, offset];
+        const result = await pool.query(dataSql, dataParams);
+
+        return new Response(JSON.stringify({
+            ok: true,
+            admins: result.rows,
+            total,
+            page,
+            totalPages: Math.ceil(total / limit)
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+
+    } catch (error) {
+        console.error('List Admins Error:', error);
+        return new Response(JSON.stringify({ ok: false, error: 'DB_ERROR', message: error.message }), { status: 500 });
+    } finally {
+        await pool.end();
+    }
+}
+
+
+

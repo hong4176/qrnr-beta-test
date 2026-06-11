@@ -1,0 +1,62 @@
+
+/* auto override for admin white text */
+html, body, .container, .card, .panel, .tab, .table, .toolbar { color:#fff !important; }
+h1,h2,h3,h4,h5,h6,p,span,small,label,legend,th,td,li,dt,dd { color:#fff !important; }
+input, select, textarea, button { color:#fff !important; }
+::placeholder { color:#ddd !important; opacity:1; }
+
+/* =========================
+   취소 사유 모달 - 다크 테마 고정
+========================= */
+
+/* 모달 박스 */
+#cancel-reason-modal .modal-box {
+  background: #0f141a !important;   /* 관리자 bg */
+  color: #e6edf3 !important;
+  border: 1px solid #263241;
+}
+
+/* 제목 */
+#cancel-reason-modal h3 {
+  color: #e6edf3 !important;
+}
+
+/* textarea */
+#cancel-reason-modal textarea {
+  background: #0b1620 !important;
+  color: #e6edf3 !important;
+  border: 1px solid #263241 !important;
+}
+
+#cancel-reason-modal textarea:focus {
+  outline: none;
+  border-color: #2ea043 !important;
+}
+
+/* placeholder */
+#cancel-reason-modal textarea::placeholder {
+  color: #9fb0c0 !important;
+  opacity: 1;
+}
+
+/* 버튼 영역 */
+#cancel-reason-modal .modal-actions button {
+  background: #0b1620 !important;
+  color: #e6edf3 !important;
+  border: 1px solid #263241 !important;
+}
+
+/* 확인 버튼 */
+#cancel-reason-modal .modal-actions button.danger {
+  background: #ef4444 !important;
+  border-color: #ef4444 !important;
+  color: #fff !important;
+}
+
+/* =========================
+   모달 최상위 오버레이 강제 다크
+========================= */
+#cancel-reason-modal {
+  background: rgba(0, 0, 0, 0.6) !important;
+}
+

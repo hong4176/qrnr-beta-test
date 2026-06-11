@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="ko">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="/src/admin/assets/css/style.css" />
+  <link rel="stylesheet" href="/src/admin/assets/css/override-white.css" />
+  <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+<link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <title>관리자 로그인</title>
+  <style>
+    /* 1. 입력 안되는 현상 해결을 위한 강제 활성화 스타일 */
+    body, html { pointer-events: auto !important; opacity: 1 !important; }
+    input.input {
+      pointer-events: auto !important;
+      user-select: auto !important;
+      background-color: #0b1620 !important;
+      color: white !important;
+      position: relative !important;
+      z-index: 10 !important;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>관리자 로그인</h1>
+
+    <div class="card vstack" style="max-width:520px;margin:0 auto">
+      <input id="uid" class="input" placeholder="아이디">
+      <input id="pwd" class="input" type="password" placeholder="비밀번호">
+      <button id="login" class="btn primary">로그인</button>
+    </div>
+
+    <div class="small" style="text-align:center;margin-top:10px">
+      고객 로그인은 <a href="/order/login">/order/login</a>
+    </div>
+  </div>
+
+  <script type="module">
+    import { get } from '/src/admin/assets/js/modules/store.js';
+    import { saveToken } from '/src/admin/assets/js/modules/auth.js';
+    import { isValidStoreId, ensureStoreInitialized, setGlobalStoreId } from '/src/shared/store.js';
+
+    // 화면 차단막 강제 제거
+    document.body.style.pointerEvents = "auto";
+    document.body.style.opacity = "1";
+
+    const loginBtn = document.getElementById('login');
+
+    loginBtn.onclick = async () => {
+      const uid = document.getElementById('uid').value.trim();
+      const pwd = document.getElementById('pwd').value.trim();
+
+      if (!uid || !pwd) {
+        alert('아이디와 비밀번호를 입력하세요.');
+        return;
+      }
+
+      // ─────────────────────────────
+      // 1) API 로그인 요청 (uid, pwd로 서버 규격 일치시킴)
+      // ─────────────────────────────
+      let data = {};
+      let res;
+      try {
+        res = await fetch('/api/login-admin', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ uid, pwd }) 
+        });
+        data = await res.json();
+      } catch (e) {
+        console.error('login error', e);
+        alert('서버에 연결할 수 없습니다.');
+        return;
+      }
+
+      if (!res.ok || !data.token) {
+        alert('로그인 실패: 아이디 또는 비밀번호가 올바르지 않습니다.');
+        return;
+      }
+
+      // 2) JWT 토큰 저장
+      saveToken(data.token);
+
+      // ─────────────────────────────
+      // 3) 매장 매핑 확인 (원본 로직 100% 복구)
+      // ─────────────────────────────
+      let finalStoreId = null;
+      // 3-1) 다중 매장일 경우
+      if (data.admin && data.admin.stores && data.admin.stores.length > 0) {
+        const stores = data.admin.stores;
+        if (stores.length === 1) {
+          finalStoreId = stores[0].storeId;
+        } else {
+          showStoreModal(stores); // 모달 내 selectStore 함수에서도 정화가 필요함
+          return;
+        }
+      } 
+      // 3-2) 단일 매장 fallback
+      else if (data.admin && data.admin.storeId) {
+        finalStoreId = data.admin.storeId;
+      } else {
+        const localMap = get(['admin', 'storeAdmins']) || {};
+        finalStoreId = localMap[uid];
+      }
+
+      // 4) 최종 이동 전 무결성 검사
+      if (!isValidStoreId(finalStoreId)) {
+          // 서버 응답마저 오염되었다면 최후의 수단으로 ensure 실행
+          finalStoreId = ensureStoreInitialized(); 
+      }
+
+      // 🚀 확정된 ID를 강제 동기화 (URL과 스토리지 세탁)
+      setGlobalStoreId(finalStoreId);
+      location.href = `/admin?store=${encodeURIComponent(finalStoreId)}`;
+    };
+
+    // ─────────────────────────────
+    // 5) 매장 선택 모달 (원본 코드 100% 복구)
+    // ─────────────────────────────
+    function showStoreModal(stores) {
+      const modalHtml = `
+      <div id="storeModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;">
+        <div class="card vstack" style="width:340px;max-width:90%;border:1px solid var(--border);box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+          <h3 style="margin-top:0;text-align:center;border-bottom:1px solid var(--border);padding-bottom:12px">매장 선택</h3>
+          <p class="small" style="text-align:center;margin-bottom:8px">접속할 매장을 선택해 주세요.</p>
+          <div class="vstack" style="gap:10px;max-height:300px;overflow-y:auto;padding:4px">
+            ${stores.map(s => `
+              <button onclick="selectStore('${s.storeId}')" class="btn" style="width:100%;text-align:left;display:flex;flex-direction:column;gap:4px;padding:12px">
+                <span style="font-weight:600;font-size:15px">${s.storeName}</span>
+                <span class="small" style="opacity:0.7">${s.storeId}</span>
+              </button>
+            `).join('')}
+          </div>
+          <button id="closeModalBtn" class="btn secondary" style="width:100%;margin-top:10px;border-color:transparent;color:var(--muted)">
+            취소
+          </button>
+        </div>
+      </div>
+    `;
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+      document.getElementById('closeModalBtn').onclick = () => document.getElementById('storeModal').remove();
+    }
+
+    window.selectStore = (storeId) => {
+      // 🚀 여기서도 수문장을 거쳐서 저장소와 URL을 동기화합니다.
+      setGlobalStoreId(storeId);
+      location.href = `/admin?store=${encodeURIComponent(storeId)}`;
+    };
+
+    // 엔터키 지원
+    window.onkeydown = (e) => { if(e.key === 'Enter') loginBtn.click(); };
+  </script>
+</body>
+</html>
